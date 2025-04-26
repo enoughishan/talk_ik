@@ -613,13 +613,14 @@
         const currentTime = player.getCurrentTime();
         const videoId = player.getVideoData().video_id;
 
-        db.ref(`rooms/${roomId}`).set({
+        // Update the video state in Firebase
+        db.ref(`rooms/${roomId}`).update({
           videoId,
           state,
           currentTime,
           lastUpdatedBy: userId
         });
-        
+
         isLocalAction = false;
       }
     }
@@ -733,7 +734,9 @@
     db.ref(`rooms/${roomId}/messages`).orderByChild('timestamp').limitToLast(20).on("child_added", (snapshot) => {
       const messageData = snapshot.val();
       const messageElement = document.createElement("div");
-      messageElement.textContent = messageData.message;
+
+      // Display sender's name and message
+      messageElement.innerHTML = `<strong>${messageData.sender}:</strong> ${messageData.message}`;
       document.getElementById("chat-box").appendChild(messageElement);
 
       const chatBox = document.getElementById("chat-box");
