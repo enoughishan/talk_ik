@@ -583,6 +583,7 @@
     const userId = "user_" + Date.now();
     let isSyncing = false;
     let isLocalAction = false;
+    let lastSyncTime = 0;
 
     // Track user activity
     trackUserActivity(userId);
@@ -604,25 +605,84 @@
 
     function onPlayerReady(event) {
       console.log("Player ready!");
-      player.playVideo();
+      // Start syncing with the room when player is ready
+      syncWithRoom();
     }
 
     function onPlayerStateChange(event) {
+      const currentTime = Date.now();
+      // Throttle updates to prevent spamming Firebase
+      if (currentTime - lastSyncTime < 500) return;
+      lastSyncTime = currentTime;
+
       if (isLocalAction) {
         const state = event.data;
         const currentTime = player.getCurrentTime();
         const videoId = player.getVideoData().video_id;
 
-        // Update the video state in Firebase
         db.ref(`rooms/${roomId}`).update({
           videoId,
           state,
           currentTime,
-          lastUpdatedBy: userId
+          lastUpdatedBy: userId,
+          timestamp: Date.now()
         });
-
+        
         isLocalAction = false;
       }
+    }
+
+    // Enhanced sync function that handles all synchronization
+    function syncWithRoom() {
+      db.ref(`rooms/${roomId}`).on("value", (snapshot) => {
+        if (isSyncing) return;
+        isSyncing = true;
+        
+        const data = snapshot.val();
+        if (!data || !player || !player.getCurrentTime) {
+          isSyncing = false;
+          return;
+        }
+
+        const { videoId, state, currentTime, lastUpdatedBy, timestamp } = data;
+        
+        // Don't sync if the update is from the current user or too old (>5 seconds)
+        if (lastUpdatedBy === userId || (timestamp && (Date.now() - timestamp) > 5000)) {
+          isSyncing = false;
+          return;
+        }
+
+        // Load video if it's different
+        if (videoId && videoId !== player.getVideoData().video_id) {
+          player.loadVideoById(videoId, currentTime);
+          // Force the correct state after load
+          if (state === YT.PlayerState.PAUSED) {
+            setTimeout(() => player.pauseVideo(), 1000);
+          }
+          isSyncing = false;
+          return;
+        }
+
+        const playerState = player.getPlayerState();
+        const playerTime = player.getCurrentTime();
+        
+        // Handle pause state changes first
+        if (state === YT.PlayerState.PAUSED && playerState !== YT.PlayerState.PAUSED) {
+          player.seekTo(currentTime, true);
+          player.pauseVideo();
+        } 
+        // Then handle play state
+        else if (state === YT.PlayerState.PLAYING && playerState !== YT.PlayerState.PLAYING) {
+          player.seekTo(currentTime, true);
+          player.playVideo();
+        }
+        // Finally sync time if difference is significant
+        else if (Math.abs(playerTime - currentTime) > 1) {
+          player.seekTo(currentTime, true);
+        }
+        
+        setTimeout(() => isSyncing = false, 1000);
+      });
     }
 
     function onPlayerError(event) {
@@ -636,37 +696,6 @@
       }
     }
 
-    // Sync logic for updating other users
-    db.ref(`rooms/${roomId}`).on("value", (snapshot) => {
-      if (isSyncing) return;
-      isSyncing = true;
-      
-      const data = snapshot.val();
-      if (data) {
-        const { videoId, state, currentTime } = data;
-
-        // Load video if it's different
-        if (videoId && videoId !== player.getVideoData().video_id) {
-          player.loadVideoById(videoId, currentTime);
-          return;
-        }
-
-        const playerTime = player.getCurrentTime();
-        if (Math.abs(playerTime - currentTime) > 1) {
-          player.seekTo(currentTime, true);
-        }
-        
-        // Sync play/pause state
-        if (state === YT.PlayerState.PLAYING && player.getPlayerState() !== YT.PlayerState.PLAYING) {
-          player.playVideo();
-        } else if (state === YT.PlayerState.PAUSED && player.getPlayerState() !== YT.PlayerState.PAUSED) {
-          player.pauseVideo();
-        }
-      }
-      
-      setTimeout(() => isSyncing = false, 1000);
-    });
-
     // Load video handler
     document.getElementById("loadBtn").addEventListener("click", () => {
       const input = document.getElementById("inputBox").value;
@@ -678,7 +707,8 @@
           videoId,
           state: YT.PlayerState.PAUSED,
           currentTime: 0,
-          lastUpdatedBy: userId
+          lastUpdatedBy: userId,
+          timestamp: Date.now()
         });
         player.loadVideoById(videoId);
       } else {
@@ -690,15 +720,30 @@
     document.getElementById("playPauseBtn").addEventListener("click", () => {
       isLocalAction = true;
       const playerState = player.getPlayerState();
+      const currentTime = player.getCurrentTime();
 
       if (playerState === YT.PlayerState.PLAYING) {
         player.pauseVideo();
+        // Force immediate sync
+        db.ref(`rooms/${roomId}`).update({
+          state: YT.PlayerState.PAUSED,
+          currentTime: currentTime,
+          lastUpdatedBy: userId,
+          timestamp: Date.now()
+        });
       } else {
         player.playVideo();
+        // Force immediate sync
+        db.ref(`rooms/${roomId}`).update({
+          state: YT.PlayerState.PLAYING,
+          currentTime: currentTime,
+          lastUpdatedBy: userId,
+          timestamp: Date.now()
+        });
       }
     });
 
-    // Sync button handler
+    // Sync button handler (manual sync)
     document.getElementById("syncBtn").addEventListener("click", () => {
       isLocalAction = true;
       const currentTime = player.getCurrentTime();
@@ -709,7 +754,8 @@
         videoId,
         state,
         currentTime,
-        lastUpdatedBy: userId
+        lastUpdatedBy: userId,
+        timestamp: Date.now()
       });
     });
 
@@ -734,8 +780,6 @@
     db.ref(`rooms/${roomId}/messages`).orderByChild('timestamp').limitToLast(20).on("child_added", (snapshot) => {
       const messageData = snapshot.val();
       const messageElement = document.createElement("div");
-
-      // Display sender's name and message
       messageElement.innerHTML = `<strong>${messageData.sender}:</strong> ${messageData.message}`;
       document.getElementById("chat-box").appendChild(messageElement);
 
@@ -828,7 +872,8 @@
         videoId,
         state: YT.PlayerState.PAUSED,
         currentTime: 0,
-        lastUpdatedBy: userId
+        lastUpdatedBy: userId,
+        timestamp: Date.now()
       });
       player.loadVideoById(videoId);
       closeSearchPopup();
