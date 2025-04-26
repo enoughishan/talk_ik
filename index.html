@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TALK TO Ishan</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <link href="https://fonts.cdnfonts.com/css/astro-space" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Space-themed gradient background */
+    :root {
+      --cosmic-purple: #6e00ff;
+      --nebula-blue: #00b4ff;
+      --starlight: #ffd700;
+      --void: #0f0e15;
+      --plasma: #ff00aa;
+      --hologram: rgba(255, 255, 255, 0.15);
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, var(--void), #1a1a2e);
+      color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Cosmic particles background */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 30%, var(--cosmic-purple), transparent 70%),
+        radial-gradient(circle at 80% 70%, var(--nebula-blue), transparent 70%);
+      opacity: 0.15;
+      z-index: -1;
+      animation: cosmicPulse 20s infinite alternate;
+    }
+
+    /* Cyberpunk header */
+    h1 {
+      font-family: 'Astro', sans-serif;
+      font-size: 3.5rem;
+      background: linear-gradient(90deg, var(--starlight), var(--plasma));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+      margin: 1.5rem 0;
+      position: relative;
+      display: inline-block;
+      letter-spacing: 2px;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--plasma), var(--starlight));
+      border-radius: 3px;
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    h1:hover::after {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+    /* Holographic input */
+    input[type="text"] {
+      padding: 18px 25px;
+      width: 80%;
+      max-width: 700px;
+      margin: 15px 0;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      background: var(--hologram);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 
+        0 0 15px rgba(110, 0, 255, 0.3),
+        inset 0 0 10px rgba(255, 255, 255, 0.1);
+      color: white;
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    input[type="text"]::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      transform: scale(1.02);
+      box-shadow: 
+        0 0 25px rgba(0, 180, 255, 0.5),
+        inset 0 0 15px rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Cyberpunk buttons */
+    button {
+      padding: 15px 35px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 10px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      position: relative;
+      overflow: hidden;
+      color: white;
+      background: linear-gradient(45deg, var(--cosmic-purple), var(--plasma));
+      box-shadow: 
+        0 5px 15px rgba(110, 0, 255, 0.4),
+        0 0 10px rgba(255, 0, 170, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      z-index: 1;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, var(--plasma), var(--cosmic-purple));
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: -1;
+    }
+
+    button:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 
+        0 10px 25px rgba(110, 0, 255, 0.6),
+        0 0 20px rgba(255, 0, 170, 0.5);
+    }
+
+    button:hover::before {
+      opacity: 1;
+    }
+
+    button:active {
+      transform: translateY(2px);
+    }
+
+    /* Futuristic YouTube player */
+    #player {
+      width: 100%;
+      max-width: 900px;
+      height: 500px;
+      margin: 2rem 0;
+      border-radius: 20px;
+      box-shadow: 
+        0 0 30px rgba(0, 180, 255, 0.3),
+        0 0 60px rgba(110, 0, 255, 0.2);
+      transform: perspective(1000px) rotateX(0deg) scale(1);
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      position: relative;
+      z-index: 2;
+    }
+
+    #player::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, var(--plasma), var(--nebula-blue), var(--starlight));
+      z-index: -1;
+      border-radius: 22px;
+      opacity: 0.7;
+      animation: animateBorder 4s linear infinite;
+      background-size: 400%;
+    }
+
+    #player:hover {
+      transform: perspective(1000px) rotateX(5deg) scale(1.02);
+      box-shadow: 
+        0 0 50px rgba(0, 180, 255, 0.5),
+        0 0 80px rgba(110, 0, 255, 0.3);
+    }
+
+    /* Holographic chat box */
+    #chat-box {
+      height: 350px;
+      overflow-y: auto;
+      padding: 25px;
+      margin: 2rem 0;
+      background: rgba(15, 14, 21, 0.6);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-radius: 20px;
+      box-shadow: 
+        0 0 20px rgba(0, 180, 255, 0.2),
+        inset 0 0 10px rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #chat-box div {
+      margin-bottom: 15px;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      font-size: 1rem;
+      animation: messageAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #chat-box div::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: linear-gradient(to bottom, var(--plasma), var(--nebula-blue));
+    }
+
+    #chat-box div:hover {
+      transform: translateX(10px);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Cyber search popup */
+    #searchPopup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(15, 14, 21, 0.95);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      box-shadow: 
+        0 0 50px rgba(110, 0, 255, 0.3),
+        0 0 100px rgba(0, 180, 255, 0.2);
+      padding: 30px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      border-radius: 25px;
+      z-index: 1000;
+      display: none;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      animation: hologramAppear 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .search-result {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 20px;
+      cursor: pointer;
+      border-radius: 15px;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      background: rgba(255, 255, 255, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .search-result::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(110, 0, 255, 0.1), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+
+    .search-result:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .search-result:hover::before {
+      transform: translateX(100%);
+    }
+
+    .search-result img {
+      width: 100px;
+      height: 70px;
+      margin-right: 20px;
+      border-radius: 10px;
+      object-fit: cover;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .search-result span {
+      flex-grow: 1;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: white;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--plasma);
+      background: rgba(255, 0, 170, 0.1);
+      border-radius: 50%;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      border: 1px solid rgba(255, 0, 170, 0.2);
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 0, 170, 0.2);
+      transform: rotate(180deg) scale(1.1);
+      box-shadow: 0 0 15px rgba(255, 0, 170, 0.3);
+    }
+
+    /* Cyber active users counter */
+    #activeUsersCount {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background: rgba(255, 215, 0, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 50px;
+      font-weight: 700;
+      color: var(--starlight);
+      box-shadow: 
+        0 0 15px rgba(255, 215, 0, 0.2),
+        inset 0 0 10px rgba(255, 255, 255, 0.1);
+      z-index: 100;
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      animation: cyberPulse 3s infinite;
+    }
+
+    /* Animations */
+    @keyframes cosmicPulse {
+      0% { opacity: 0.1; transform: scale(1); }
+      50% { opacity: 0.2; transform: scale(1.1); }
+      100% { opacity: 0.1; transform: scale(1); }
+    }
+
+    @keyframes animateBorder {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes messageAppear {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes hologramAppear {
+      from { opacity: 0; transform: translate(-50%, -40%); filter: blur(10px); }
+      to { opacity: 1; transform: translate(-50%, -50%); filter: blur(0); }
+    }
+
+    @keyframes cyberPulse {
+      0% { box-shadow: 0 0 5px 0 rgba(255, 215, 0, 0.7); }
+      70% { box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0); }
+      100% { box-shadow: 0 0 5px 0 rgba(255, 215, 0, 0.3); }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(var(--cosmic-purple), var(--plasma));
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--plasma);
+    }
+
+    /* Floating particles animation */
+    .particle {
+      position: fixed;
+      background: white;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: -1;
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      to {
+        transform: translateY(-100vh) rotate(360deg);
+      }
+    }
+
+    /* Responsive design */
+    @media (max-width: 1024px) {
+      h1 {
+        font-size: 2.8rem;
+      }
+      
+      #player {
+        height: 400px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.2rem;
+      }
+      
+      input[type="text"] {
+        width: 90%;
+        padding: 15px 20px;
+      }
+      
+      #player {
+        height: 300px;
+        max-width: 95%;
+      }
+      
+      #chat-box {
+        height: 300px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      button {
+        padding: 12px 25px;
+        font-size: 1rem;
+      }
+      
+      #player {
+        height: 250px;
+      }
+      
+      .search-result {
+        flex-direction: column;
+        text-align: center;
+      }
+      
+      .search-result img {
+        margin-right: 0;
+        margin-bottom: 15px;
+        width: 100%;
+        height: auto;
+        max-height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="activeUsersCount">Active Users: 0</div>
+  <h1>WATCH WITH ik</h1>
+
+  <!-- Input Box for URL or Search Query -->
+  <div class="flex-row">
+    <input type="text" id="inputBox" placeholder="Paste YouTube URL or Search for a video">
+    <button id="loadBtn">Load</button>
+  </div>
+  
+  <!-- Floating Search Results Popup -->
+  <div id="searchPopup">
+    <div class="close-btn" onclick="closeSearchPopup()">×</div>
+    <div id="searchResults"></div>
+  </div>
+
+  <!-- YouTube Player -->
+  <div id="player"></div>
+
+  <!-- Play/Pause and Sync Buttons -->
+  <div class="flex-row">
+    <button id="playPauseBtn">Play/Pause</button>
+    <button id="syncBtn">Sync</button>
+  </div>
+
+  <!-- Chat Section -->
+  <div id="chat-container">
+    <div id="chat-box"></div>
+    <div class="flex-row">
+      <input type="text" id="chat-input" placeholder="Type a message">
+      <button id="send-chat-btn">Send</button>
+      <button id="clear-chat-btn">Clear Chat</button>
+    </div>
+  </div>
+
+  <script>
+    // Create floating particles
+    function createParticles() {
+      const particles = 50;
+      for (let i = 0; i < particles; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        
+        // Random properties
+        const size = Math.random() * 5 + 1;
+        const posX = Math.random() * window.innerWidth;
+        const posY = Math.random() * window.innerHeight;
+        const opacity = Math.random() * 0.5 + 0.1;
+        const duration = Math.random() * 20 + 10;
+        
+        // Apply styles
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${posX}px`;
+        particle.style.top = `${posY}px`;
+        particle.style.opacity = opacity;
+        particle.style.animationDuration = `${duration}s`;
+        
+        // Random color
+        const colors = ['#6e00ff', '#00b4ff', '#ff00aa', '#ffd700'];
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+        
+        document.body.appendChild(particle);
+      }
+    }
+    
+    window.addEventListener('load', createParticles);
+
+    // Configuration for Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBhT_v5ZXRNwosQu1h5O6iwN3M-N-JG190",
+      authDomain: "watchtogether-a8e28.firebaseapp.com",
+      databaseURL: "https://watchtogether-a8e28-default-rtdb.firebaseio.com",
+      projectId: "watchtogether-a8e28",
+      storageBucket: "watchtogether-a8e28.appspot.com",
+      messagingSenderId: "393892789141",
+      appId: "1:393892789141:web:b0877f280288d3277a149c",
+      measurementId: "G-NJ389YLVJ8"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // YouTube Player setup
+    let player;
+    let roomId = "room123";
+    const userId = "user_" + Date.now();
+    let isSyncing = false;
+    let isLocalAction = false;
+
+    // Track user activity
+    trackUserActivity(userId);
+
+    // YouTube Data API Key
+    const youtubeApiKey = "AIzaSyA6UP-7PEXXrQaWf84WuG_RxHS5jBcQEqc";
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        height: '360',
+        width: '640',
+        events: {
+          onStateChange: onPlayerStateChange,
+          onReady: onPlayerReady,
+          onError: onPlayerError
+        },
+      });
+    }
+
+    function onPlayerReady(event) {
+      console.log("Player ready!");
+      player.playVideo();
+    }
+
+    function onPlayerStateChange(event) {
+      if (isLocalAction) {
+        const state = event.data;
+        const currentTime = player.getCurrentTime();
+        const videoId = player.getVideoData().video_id;
+
+        db.ref(`rooms/${roomId}`).set({
+          videoId,
+          state,
+          currentTime,
+          lastUpdatedBy: userId
+        });
+        
+        isLocalAction = false;
+      }
+    }
+
+    function onPlayerError(event) {
+      const errorCode = event.data;
+      if (errorCode === 100) {
+        alert("This video is unavailable.");
+      } else if (errorCode === 101 || errorCode === 150) {
+        alert("This video cannot be embedded.");
+      } else {
+        alert("An error occurred while loading the video.");
+      }
+    }
+
+    // Sync logic for updating other users
+    db.ref(`rooms/${roomId}`).on("value", (snapshot) => {
+      if (isSyncing) return;
+      isSyncing = true;
+      
+      const data = snapshot.val();
+      if (data) {
+        const { videoId, state, currentTime } = data;
+
+        // Load video if it's different
+        if (videoId && videoId !== player.getVideoData().video_id) {
+          player.loadVideoById(videoId, currentTime);
+          return;
+        }
+
+        const playerTime = player.getCurrentTime();
+        if (Math.abs(playerTime - currentTime) > 1) {
+          player.seekTo(currentTime, true);
+        }
+        
+        // Sync play/pause state
+        if (state === YT.PlayerState.PLAYING && player.getPlayerState() !== YT.PlayerState.PLAYING) {
+          player.playVideo();
+        } else if (state === YT.PlayerState.PAUSED && player.getPlayerState() !== YT.PlayerState.PAUSED) {
+          player.pauseVideo();
+        }
+      }
+      
+      setTimeout(() => isSyncing = false, 1000);
+    });
+
+    // Load video handler
+    document.getElementById("loadBtn").addEventListener("click", () => {
+      const input = document.getElementById("inputBox").value;
+      const videoId = extractVideoId(input);
+
+      if (videoId) {
+        isLocalAction = true;
+        db.ref(`rooms/${roomId}`).set({
+          videoId,
+          state: YT.PlayerState.PAUSED,
+          currentTime: 0,
+          lastUpdatedBy: userId
+        });
+        player.loadVideoById(videoId);
+      } else {
+        searchYouTubeVideos(input);
+      }
+    });
+
+    // Play/Pause button handler
+    document.getElementById("playPauseBtn").addEventListener("click", () => {
+      isLocalAction = true;
+      const playerState = player.getPlayerState();
+
+      if (playerState === YT.PlayerState.PLAYING) {
+        player.pauseVideo();
+      } else {
+        player.playVideo();
+      }
+    });
+
+    // Sync button handler
+    document.getElementById("syncBtn").addEventListener("click", () => {
+      isLocalAction = true;
+      const currentTime = player.getCurrentTime();
+      const state = player.getPlayerState();
+      const videoId = player.getVideoData().video_id;
+
+      db.ref(`rooms/${roomId}`).set({
+        videoId,
+        state,
+        currentTime,
+        lastUpdatedBy: userId
+      });
+    });
+
+    // Chat functionality
+    document.getElementById("send-chat-btn").addEventListener("click", () => {
+      const messageInput = document.getElementById("chat-input");
+      const message = messageInput.value.trim();
+
+      if (message) {
+        const timestamp = Date.now();
+        db.ref(`rooms/${roomId}/messages`).push({
+          message,
+          timestamp,
+          sender: userId
+        }).then(() => {
+          messageInput.value = '';
+        });
+      }
+    });
+
+    // Listen for new messages
+    db.ref(`rooms/${roomId}/messages`).orderByChild('timestamp').limitToLast(20).on("child_added", (snapshot) => {
+      const messageData = snapshot.val();
+      const messageElement = document.createElement("div");
+      messageElement.textContent = messageData.message;
+      document.getElementById("chat-box").appendChild(messageElement);
+
+      const chatBox = document.getElementById("chat-box");
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // Clear chat handler
+    document.getElementById("clear-chat-btn").addEventListener("click", () => {
+      if (confirm("Are you sure you want to clear the chat?")) {
+        db.ref(`rooms/${roomId}/messages`).remove()
+          .then(() => {
+            document.getElementById("chat-box").innerHTML = "";
+          })
+          .catch((error) => {
+            console.error("Error clearing chat:", error);
+            alert("Failed to clear chat. Please try again.");
+          });
+      }
+    });
+
+    // Clean up old messages periodically
+    setInterval(cleanupOldMessages, 60000);
+
+    // Helper functions
+    function extractVideoId(url) {
+      const regexStandard = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:[^\/]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)([a-zA-Z0-9_-]{11})/;
+      const regexShort = /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/;
+
+      let match = url.match(regexStandard);
+      if (!match) match = url.match(regexShort);
+      return match ? match[1] : null;
+    }
+
+    function searchYouTubeVideos(query) {
+      if (!query.trim()) {
+        alert("Please enter a search term");
+        return;
+      }
+
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(query)}&key=${youtubeApiKey}`;
+      
+      fetch(searchUrl)
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error.message);
+          displaySearchResults(data.items);
+        })
+        .catch(error => {
+          console.error("Error searching YouTube:", error);
+          alert("Failed to search videos: " + error.message);
+        });
+    }
+
+    function displaySearchResults(videos) {
+      const resultsContainer = document.getElementById("searchResults");
+      resultsContainer.innerHTML = "";
+
+      if (!Array.isArray(videos) || videos.length === 0) {
+        resultsContainer.innerHTML = "<p>No results found.</p>";
+        return;
+      }
+
+      videos.forEach(video => {
+        const videoId = video.id.videoId;
+        const videoTitle = video.snippet.title;
+        const videoThumbnail = video.snippet.thumbnails.default.url;
+
+        const resultItem = document.createElement("div");
+        resultItem.classList.add("search-result");
+
+        resultItem.innerHTML = `
+          <img src="${videoThumbnail}" alt="${videoTitle}" />
+          <span>${videoTitle}</span>
+          <button onclick="loadVideo('${videoId}')">Play</button>
+        `;
+        
+        resultsContainer.appendChild(resultItem);
+      });
+
+      document.getElementById("searchPopup").style.display = "block";
+    }
+
+    function loadVideo(videoId) {
+      isLocalAction = true;
+      db.ref(`rooms/${roomId}`).set({
+        videoId,
+        state: YT.PlayerState.PAUSED,
+        currentTime: 0,
+        lastUpdatedBy: userId
+      });
+      player.loadVideoById(videoId);
+      closeSearchPopup();
+    }
+
+    function closeSearchPopup() {
+      document.getElementById("searchPopup").style.display = "none";
+    }
+
+    function cleanupOldMessages() {
+      db.ref(`rooms/${roomId}/messages`).once('value', (snapshot) => {
+        const messages = snapshot.val() || {};
+        const messageKeys = Object.keys(messages);
+        
+        if (messageKeys.length > 20) {
+          const sortedMessages = Object.entries(messages)
+            .map(([key, value]) => ({ key, ...value }))
+            .sort((a, b) => a.timestamp - b.timestamp);
+          
+          const messagesToDelete = sortedMessages.slice(0, sortedMessages.length - 20);
+          
+          messagesToDelete.forEach(msg => {
+            db.ref(`rooms/${roomId}/messages/${msg.key}`).remove();
+          });
+        }
+      });
+    }
+
+    function trackUserActivity(userId) {
+      const userRef = db.ref(`rooms/${roomId}/activeUsers/${userId}`);
+      
+      function updatePresence() {
+        userRef.set({
+          userId,
+          timestamp: Date.now(),
+          lastActive: new Date().toISOString()
+        });
+      }
+      
+      updatePresence();
+      const presenceInterval = setInterval(updatePresence, 30000);
+      
+      userRef.onDisconnect().remove().then(() => {
+        clearInterval(presenceInterval);
+        updateActiveUserCount();
+      });
+      
+      updateActiveUserCount();
+    }
+
+    function updateActiveUserCount() {
+      db.ref(`rooms/${roomId}/activeUsers`).once('value', snapshot => {
+        const activeUsers = snapshot.val() || {};
+        const activeUserCount = Object.keys(activeUsers).length;
+        document.getElementById('activeUsersCount').textContent = `Active Users: ${activeUserCount}`;
+      });
+    }
+
+    // Handle window close
+    window.addEventListener('beforeunload', () => {
+      db.ref(`rooms/${roomId}/activeUsers/${userId}`).remove();
+    });
+  </script>
+</body>
+</html>
