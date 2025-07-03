@@ -10,7 +10,7 @@
   <link href="https://fonts.cdnfonts.com/css/astro-space" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    /* Space-themed gradient background */
+    
     :root {
       --cosmic-purple: #6e00ff;
       --nebula-blue: #00b4ff;
@@ -31,7 +31,7 @@
       position: relative;
     }
 
-    /* Cosmic particles background */
+    
     body::before {
       content: "";
       position: fixed;
@@ -47,7 +47,7 @@
       animation: cosmicPulse 20s infinite alternate;
     }
 
-    /* Cyberpunk header */
+    
     h1 {
       font-family: 'Astro', sans-serif;
       font-size: 3.5rem;
@@ -81,7 +81,7 @@
       transform-origin: left;
     }
 
-    /* Holographic input */
+    
     input[type="text"] {
       padding: 18px 25px;
       width: 80%;
@@ -114,7 +114,7 @@
       background: rgba(255, 255, 255, 0.2);
     }
 
-    /* Cyberpunk buttons */
+    
     button {
       padding: 15px 35px;
       font-size: 1.1rem;
@@ -204,7 +204,7 @@
         0 0 80px rgba(110, 0, 255, 0.3);
     }
 
-    /* Holographic chat box */
+    
     #chat-box {
       height: 350px;
       overflow-y: auto;
@@ -348,7 +348,7 @@
       box-shadow: 0 0 15px rgba(255, 0, 170, 0.3);
     }
 
-    /* Cyber active users counter */
+    
     #activeUsersCount {
       position: fixed;
       top: 20px;
@@ -368,7 +368,7 @@
       animation: cyberPulse 3s infinite;
     }
 
-    /* Animations */
+    
     @keyframes cosmicPulse {
       0% { opacity: 0.1; transform: scale(1); }
       50% { opacity: 0.2; transform: scale(1.1); }
@@ -397,7 +397,7 @@
       100% { box-shadow: 0 0 5px 0 rgba(255, 215, 0, 0.3); }
     }
 
-    /* Custom scrollbar */
+    
     ::-webkit-scrollbar {
       width: 10px;
     }
@@ -417,7 +417,7 @@
       background: var(--plasma);
     }
 
-    /* Floating particles animation */
+    
     .particle {
       position: fixed;
       background: white;
@@ -518,7 +518,7 @@
     <button id="syncBtn">Sync</button>
   </div>
 
-  <!-- Chat Section -->
+  
   <div id="chat-container">
     <div id="chat-box"></div>
     <div class="flex-row">
@@ -536,7 +536,7 @@
         const particle = document.createElement('div');
         particle.classList.add('particle');
         
-        // Random properties
+        
         const size = Math.random() * 5 + 1;
         const posX = Math.random() * window.innerWidth;
         const posY = Math.random() * window.innerHeight;
@@ -605,7 +605,7 @@
 
     function onPlayerReady(event) {
       console.log("Player ready!");
-      // Start syncing with the room when player is ready
+      
       syncWithRoom();
     }
 
@@ -632,7 +632,7 @@
       }
     }
 
-    // Enhanced sync function that handles all synchronization
+    
     function syncWithRoom() {
       db.ref(`rooms/${roomId}`).on("value", (snapshot) => {
         if (isSyncing) return;
@@ -646,16 +646,16 @@
 
         const { videoId, state, currentTime, lastUpdatedBy, timestamp } = data;
         
-        // Don't sync if the update is from the current user or too old (>5 seconds)
+        
         if (lastUpdatedBy === userId || (timestamp && (Date.now() - timestamp) > 5000)) {
           isSyncing = false;
           return;
         }
 
-        // Load video if it's different
+        
         if (videoId && videoId !== player.getVideoData().video_id) {
           player.loadVideoById(videoId, currentTime);
-          // Force the correct state after load
+          
           if (state === YT.PlayerState.PAUSED) {
             setTimeout(() => player.pauseVideo(), 1000);
           }
@@ -666,12 +666,12 @@
         const playerState = player.getPlayerState();
         const playerTime = player.getCurrentTime();
         
-        // Handle pause state changes first
+        
         if (state === YT.PlayerState.PAUSED && playerState !== YT.PlayerState.PAUSED) {
           player.seekTo(currentTime, true);
           player.pauseVideo();
         } 
-        // Then handle play state
+        
         else if (state === YT.PlayerState.PLAYING && playerState !== YT.PlayerState.PLAYING) {
           player.seekTo(currentTime, true);
           player.playVideo();
@@ -696,7 +696,7 @@
       }
     }
 
-    // Load video handler
+    
     document.getElementById("loadBtn").addEventListener("click", () => {
       const input = document.getElementById("inputBox").value;
       const videoId = extractVideoId(input);
@@ -759,7 +759,7 @@
       });
     });
 
-    // Chat functionality
+    
     document.getElementById("send-chat-btn").addEventListener("click", () => {
       const messageInput = document.getElementById("chat-input");
       const message = messageInput.value.trim();
@@ -787,7 +787,7 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     });
 
-    // Clear chat handler
+    
     document.getElementById("clear-chat-btn").addEventListener("click", () => {
       if (confirm("Are you sure you want to clear the chat?")) {
         db.ref(`rooms/${roomId}/messages`).remove()
@@ -801,10 +801,10 @@
       }
     });
 
-    // Clean up old messages periodically
+    
     setInterval(cleanupOldMessages, 60000);
 
-    // Helper functions
+    
     function extractVideoId(url) {
       const regexStandard = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:[^\/]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)([a-zA-Z0-9_-]{11})/;
       const regexShort = /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]{11})/;
@@ -932,7 +932,7 @@
       });
     }
 
-    // Handle window close
+    
     window.addEventListener('beforeunload', () => {
       db.ref(`rooms/${roomId}/activeUsers/${userId}`).remove();
     });
